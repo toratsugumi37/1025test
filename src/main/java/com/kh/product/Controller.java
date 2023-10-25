@@ -98,11 +98,12 @@ public class Controller {
                                       @RequestBody @Valid RequestUpdateForm requestUpdateForm,
                                       BindingResult bindingResult){
         ApiResponse<Object> res = null;
-        Product product = requestSVC.updateProduct(pid,requestUpdateForm);
-        log.info("업데이트될 product{}",product);
         if(bindingResult.hasErrors()){
             res = ApiResponse.createApiResponse("01","업데이트실패(범위값오류)",null);
+            return res;
         }
+        Product product = requestSVC.updateProduct(pid,requestUpdateForm);
+        log.info("업데이트될 product{}",product);
         if(product.getPid() >= 1){
             res = ApiResponse.createApiResponse("00","업데이트성공",product);
         } else {
