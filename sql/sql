@@ -1,0 +1,30 @@
+//DDL
+
+DROP USER c##servertest2 CASCADE;
+CREATE USER c##servertest2 IDENTIFIED BY servertest2;
+GRANT CONNECT, RESOURCE, dba TO c##servertest2;
+
+//DML
+
+create table product(
+    pid NUMBER(10,0) primary key not null,
+    pname VARCHAR2(30 BYTE),
+    quantity NUMBER(10,0),
+    price NUMBER(10,0)
+);
+
+//시퀀스
+create sequence c##servertest2.pid_seq minvalue 1 maxvalue 9999;
+
+//삽입
+insert into product(pid,pname,quantity,price) values (1,'test',1,1000);
+//전체조회
+select * from product;
+//개별조회
+select * from product where pid = 1;
+//수정
+update product set pname = 'testOne', quantity = 2, price = 3 where pid = 1;
+//삭제
+delete from product where pid = 1;
+
+

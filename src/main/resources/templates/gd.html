@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<style>
+    .hidden {
+        display:none;
+    }
+
+    #saveForm {
+        display:flex;
+        border:1px solid black;
+        flex-direction: column;
+        width:200px;
+        padding:10px 0;
+        margin:10px;
+    }
+
+    #saveForm input{
+        margin:5px 10px;
+    }
+
+    #saveForm legend {
+        margin-left:10px;
+        margin-top:-20px;
+        background-color:white;
+        width:70px;
+    }
+
+    #searchForm {
+        border:1px solid black;
+        width:200px;
+        margin:10px;
+    }
+
+    #searchForm input {
+        margin:5px 10px;
+    }
+
+    #searchForm legend {
+        margin-left:10px;
+        margin-top:-10px;
+        background-color:white;
+        width:70px;
+    }
+
+    #searchedForm {
+        display:flex;
+        flex-direction: column;
+        border:1px solid black;
+        width:350px;
+        margin:10px;
+    }
+
+</style>
+<body>
+    <div style="display:flex;">
+    <form action="" id="saveForm">
+        <legend>등록하기</legend>
+        <label for="pname">상품명</label><input type="text" id="pname" name="pname">
+        <label for="quantity">수량</label><input type="text" id="quantity" name="quantity">
+        <label for="price">가격</label><input type="text" id="price" name="price">
+        <input type="button" onclick="requestSave()" value="저장하기">
+    </form>
+    <form action="" id="searchForm">
+        <legend>조회하기</legend>
+        <label for="pid">상품명</label><input type="text" id="pid" name="pid">
+        <input type="button" onclick="requestSearch()" value="조회하기">
+
+    </form>
+    </div>
+    <div>
+    <form action="" id="searchedForm">
+        <label for="searchedpid">조회된상품번호</label><input type="text" id="searchedpid" value="" readonly><br>
+        <label for="searchedpname">조회된상품명</label><input type="text" id="searchedpname" value="" readonly><br>
+        <label for="searchedquantity">조회된상품수량</label><input type="text" id="searchedquantity" value="" readonly><br>
+        <label for="searchedprice">조회된상품가격</label><input type="text" id="searchedprice" value="" readonly><br>
+        <input type="button" onclick="requestDelete()" value="삭제하기" class="hidden" id="requestDelBtn">
+        <input type="button" onclick="UpdatedReady()" value="수정하기" class="hidden" id="requestUpdBtn">
+        <input type="button" onclick="requestUpdate()" value="수정완료하기" class="hidden" id="requestUpdBtn2">
+        <input type="button" onclick="requestCancel()" value="취소" class="hidden" id="cancelBtn">
+    </form>
+    <button onclick="requestAllList()">목록보기</button>
+        <table class="here" style="width:350px;">
+        <tr>
+            <th>
+            제품번호
+            </th>
+            <th>
+            제품명
+            </th>
+            <th>
+            제품갯수
+            </th>
+            <th>
+            제품가격
+            </th>
+        </tr>
+        </table>
+    </div>
+
+
+</body>
+<script type="module">
+
+    import { ajax } from '/js/ajax.js';
+
+
+    //상품등록
+
+    window.addProduct = async product => {
+    try {
+        const url = '/save';
+        const result = await ajax.post(url, product);
+        if (result.header.rtcd === '00') {
+
+        let $pname = document.getElementById('pname');
+        let $quantity = document.getElementById('quantity');
+        let $price = document.getElementById('price');
+
+        $pname.value = '';
+        $quantity.value = '';
+        $price.value = '';
+
+        alert("등록되었습니다.");
+        getProducts();
+        console.log(result.body);
+        } else {
+        alert("등록에 실패하였습니다.")
+        console.log(result.header.rtmsg);
+        }
+    } catch (err) {
+        console.error(err.message);
+    }
+    };
+
+    //상품조회
+
+    window.getProduct = async pid => {
+        try {
+          const url = `/${pid}`;
+          const result = await ajax.get(url);
+          console.log(result);
+          if (result.header.rtcd === '00') {
+            console.log(result);
+            let spid = result.body[0].pid;
+            let spname = result.body[0].pname;
+            let squantity = result.body[0].quantity;
+            let sprice = result.body[0].price;
+            let $searchedpid = document.getElementById('searchedpid');
+            let $searchedpname = document.getElementById('searchedpname');
+            let $searchedquantity = document.getElementById('searchedquantity');
+            let $searchedprice = document.getElementById('searchedprice');
+            $searchedpid.value = spid;
+            $searchedpname.value = spname;
+            $searchedquantity.value = squantity;
+            $searchedprice.value = sprice;
+            let $DelBtn = document.getElementById('requestDelBtn');
+            let $UpdBtn = document.getElementById('requestUpdBtn');
+
+
+            $DelBtn.classList.remove('hidden');
+            $UpdBtn.classList.remove('hidden');
+          } else {
+            console.log(result.header.rtmsg);
+          }
+        } catch (err) {
+          console.error(err);
+        }
+    }
+
+      //상품목록
+
+      window.getProducts = async () => {
+        try {
+          const url = `/all`;
+          const result = await ajax.get(url);
+          console.log(result);
+          if (result.header.rtcd === '00') {
+            let $here = document.querySelector('.here');
+            $here.innerHTML=`
+            <table class="here" style="width:350px;">
+                <tr>
+                    <th>
+                    상품번호
+                    </th>
+                    <th>
+                    상품명
+                    </th>
+                    <th>
+                    상품갯수
+                    </th>
+                    <th>
+                    상품가격
+                    </th>
+                </tr>
+            </table>
+            `;
+
+            result.body.forEach(element => {
+                let $here = document.querySelector(".here");
+                let $tr = document.createElement('tr');
+
+                $tr.innerHTML =
+                        `<td>${element.pid}</td>
+                        <td>${element.pname}</td>
+                        <td>${element.quantity}</td>
+                        <td>${element.price}</td>`
+                $here.appendChild($tr);
+            });
+        } else {
+            let $here = document.querySelector(".here");
+            let $tr = document.createElement('tr');
+            $tr.innerHTML =`
+            <td> </td>
+            <td> </td>
+            <td> </td>
+            <td> </td>
+            `;
+            $here.appendChild($tr);
+        console.log(result.header.rtmsg);
+        }
+    } catch (err) {
+        console.error(err);
+    }
+    };
+
+    //상품삭제
+    window.delProduct = async pid => {
+    try {
+        const url = `/${pid}`;
+        const result = await ajax.delete(url);
+        console.log(result);
+        if (result.header.rtcd === '00') {
+            alert("삭제 성공")
+            getProducts();
+            let $pid = document.getElementById('pid');
+            let $searchedpid = document.getElementById('searchedpid');
+            let $searchedpname = document.getElementById('searchedpname');
+            let $searchedquantity = document.getElementById('searchedquantity');
+            let $searchedprice = document.getElementById('searchedprice');
+            $pid.value = '';
+            $searchedpid.value = '';
+            $searchedpname.value = '';
+            $searchedquantity.value = '';
+            $searchedprice.value = '';
+
+
+        let $DelBtn = document.getElementById('requestDelBtn');
+        let $UpdBtn = document.getElementById('requestUpdBtn');
+        
+
+        $DelBtn.classList.add('hidden');
+        $UpdBtn.classList.add('hidden');
+        console.log(result.body);
+
+        } else {
+            alert("삭제 실패");
+        console.log(result.header.rtmsg);
+        }
+    } catch (err) {
+        console.error(err);
+    }
+    };
+
+    //상품수정
+    window.updateProduct = async (pid, product) => {
+    try {
+        const url = `/${pid}`;
+        const result = await ajax.patch(url, product);
+        if (result.header.rtcd === '00') {
+        console.log(result.body);
+        getProducts();
+        } else {
+        console.log(result.header.rtmsg);
+        }
+    } catch (err) {
+        console.error(err.message);
+    }
+    };
+
+    </script>
+
+    <script>
+
+    let pnameValue;
+    let quantityValue;
+    let priceValue;
+
+        //상품등록
+    requestSave = function(){
+        let $pname = document.getElementById('pname').value;
+        let $quantity = document.getElementById('quantity').value;
+        let $price = document.getElementById('price').value;
+    
+        let obj = {
+            "pname":$pname,
+            "quantity":$quantity,
+            "price":$price
+        }
+        addProduct(obj);
+    }
+
+     // 조회하기
+    requestSearch = function(){
+        let $pid = document.getElementById('pid').value;
+        getProduct($pid);
+    }
+    
+
+    // 목록보기
+    requestAllList = function(){
+        getProducts();
+    }
+
+    // 삭제하기
+    requestDelete = function(){
+        if(confirm("삭제하시겠습니까?")){
+            let $pid = document.getElementById('pid').value;
+            delProduct($pid);
+        } else {
+            return;
+        }
+    }
+
+    // 수정준비
+
+    UpdatedReady = function(){
+        let $spname = document.getElementById('searchedpname');
+        let $squantity = document.getElementById('searchedquantity');
+        let $sprice = document.getElementById('searchedprice');
+        $spname.readOnly = false;
+        $squantity.readOnly = false;
+        $sprice.readOnly = false;
+
+        pnameValue = $spname.value;
+        quantityValue = $squantity.value;
+        priceValue = $sprice.value;
+
+        let $UpdateBtn = document.getElementById('requestUpdBtn2');
+        let $CancelBtn = document.getElementById('cancelBtn');
+
+        $UpdateBtn.classList.remove('hidden');
+        $CancelBtn.classList.remove('hidden');
+
+    }
+
+
+    // 수정하기
+    requestUpdate = function(){
+
+        let $pid = document.getElementById('pid').value;
+
+        let $spname = document.getElementById('searchedpname');
+        let $squantity = document.getElementById('searchedquantity');
+        let $sprice = document.getElementById('searchedprice');
+        $spname.readOnly = true;
+        $squantity.readOnly = true;
+        $sprice.readOnly = true;
+        pnameValue = $spname.value;
+        quantityValue = $squantity.value;
+        priceValue = $sprice.value;
+
+
+        let obj = {
+            "pname" : pnameValue,
+            "quantity" : quantityValue,
+            "price" : priceValue,
+        };
+        updateProduct($pid,obj);
+
+        let $UpdateBtn = document.getElementById('requestUpdBtn2');
+        let $CancelBtn = document.getElementById('cancelBtn');
+
+        $UpdateBtn.classList.add('hidden');
+        $CancelBtn.classList.add('hidden');
+    }
+
+    // requestCancel = function(){
+
+    //     let $spname = document.getElementById('searchedpname');
+    //     let $squantity = document.getElementById('searchedquantity');
+    //     let $sprice = document.getElementById('searchedprice');
+
+    //     let $CancelBtn2 = document.getElementById('requestUpdBtn2');
+    //     let $UpdateBtn2 = document.getElementById('cancelBtn');
+    //     let $UpdateBtn = document.getElementById('requestDelBtn');
+    //     let $CancelBtn = document.getElementById('requestUpdBtn');
+
+    //     $spname.readOnly = true;
+    //     $squantity.readOnly = true;
+    //     $sprice.readOnly = true;
+
+    //     $UpdateBtn.classList.add('hidden');
+    //     $CancelBtn.classList.add('hidden');
+    //     $UpdateBtn2.classList.add('hidden');
+    //     $CancelBtn2.classList.add('hidden');
+    // }
+
+    requestCancel = function(){
+
+        let $spname = document.getElementById('searchedpname');
+        let $squantity = document.getElementById('searchedquantity');
+        let $sprice = document.getElementById('searchedprice');
+
+        let $CancelBtn2 = document.getElementById('requestUpdBtn2');
+        let $UpdateBtn2 = document.getElementById('cancelBtn');
+        let $UpdateBtn = document.getElementById('requestDelBtn');
+        let $CancelBtn = document.getElementById('requestUpdBtn');
+
+        $spname.readOnly = true;
+        $squantity.readOnly = true;
+        $sprice.readOnly = true;
+
+        $spname.value = pnameValue;
+        $squantity.value = quantityValue;
+        $sprice.value = priceValue;
+
+
+        $UpdateBtn2.classList.add('hidden');
+        $CancelBtn2.classList.add('hidden');
+    }
+
+
+
+
+</script>
+</html>
